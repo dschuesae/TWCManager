@@ -168,7 +168,7 @@ class TeslaAPI:
                 self.setCarApiBearerToken("")
                 self.setCarApiRefreshToken("")
 
-            self.master.saveSettings()
+            self.master.queue_background_task({"cmd": "saveSettings"})
 
         if self.getCarApiBearerToken() != "":
             if self.getVehicleCount() < 1:
@@ -518,7 +518,7 @@ class TeslaAPI:
             )
             self.master.setHomeLat(lat)
             self.master.setHomeLon(lon)
-            self.master.saveSettings()
+            self.master.queue_background_task({"cmd": "saveSettings"})
             return True
 
         # 1 lat or lon = ~364488.888 feet. The exact feet is different depending
@@ -1070,10 +1070,10 @@ class TeslaAPI:
     @property
     def minBatteryLevelAtHome(self):
         if self.time.time() - self.lastChargeCheck > self.chargeUpdateInterval:
-            self.updateChargeAtHome()
+            self.master.queue_background_task({"cmd":"checkCharge"})
         return min(
             [car.batteryLevel for car in self.carApiVehicles if car.atHome],
-            default=10000,
+            default=10000
         )
 
 
