@@ -5,6 +5,7 @@ This document logs the changes per release of TWCManager.
 ## v1.2.1 - Current development branch
 
   * Added support for Kostal inverters (Pico/Plenticore) (thanks @hopfi2k)
+  * Added support for smart-me.com inverter API
   * Added support for serving static files via the inbuilt HTTPControl web server (thanks @hopfi2k)
   * Adjust charger load calculation based on real power measurements (thanks @dschuesae)
   * Introduce Scheduled Flex Charging feature (thanks @dschuesae)
@@ -12,10 +13,23 @@ This document logs the changes per release of TWCManager.
   * Moved debug logging to Logging modules to allow logging to file, database or other targets
   * Updated legacy Web UI to allow all EU/US amp selections (thanks @dschuesae)
   * Fix Web UI favicon (thanks @hopfi2k)
+  * Added support for web themes, to allow changing the web UI to alternate views
+  * Added Phase 1 of Charge Scheduling support, with backwards compatible charge scheduling (finally...) in the new UI
+  * Added support for local query of Enphase EMS systems (previously cloud-only)
+  * Set the legacy web UI module (WebIPC) to disabled by default. Avoids an error when running as a service, and is about time given it is deprecated.
+  * Expose all time properties to the policy module for evaluation (thanks @MikeBishop)
+  * Impovements to policy page in Web UI to show the value of policy parameters (thanks @MikeBishop)
+  * Move grace period functionality for vehicles connected prior to policy evaluation to the master module, which opens the door to policy evaluation based on vehicle arrival/VIN (thanks @MikeBishop)
+  * Split and show the values of Charger Load and Other Load in console output when the Subtract Charger Load setting is enabled (thanks @mikey4321)
+  * Added EMS module support for SmartMe API
   * Bugfixes
       * Add a sleep of 5 seconds when waking car up to avoid an infinite loop (thanks @dschuesae)
       * Fix a bug with the legacy web interface which causes the Resume Track Green Energy setting of None to fail. Also added a deprecation notice to the web interface to ensure people don't inadvertently use it over the modular interface.
-      * Fixed the Enphase EMS module which was reporting generation values as consumption (thanks Jim!)
+      * Fixed the Enphase EMS module which was reporting generation values as consumption (thanks @integlikewoah)
+      * Added fix to avoid exception if an incoming TWC message is passed as an immutable bytes object to the unescape_msg function
+      * Fix for the Fronius EMS module to query at System context rather than Device context which was failing to work in some installations due to Device ID mismatch
+      * Fix dummy interface to load in place of RS485 interface for testing (thanks @tjikkun)
+      * Add routines to avoid errors when settings keys are not defined (thanks @tjikkun)
 
 ## v1.2.0 - 2020-10-09
 

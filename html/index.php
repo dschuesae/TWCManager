@@ -7,10 +7,6 @@
     // 1 is just the most useful info.
     // 10 is all info.
     $debugLevel = 0;
-
-    // Point $twcScriptDir to the directory containing the TWCManager.py script.
-    // Interprocess Communication with TWCManager.py will not work if this
-    // parameter is incorrect.
     $twcScriptDir = "/etc/twcmanager";
 
     // End configuration parameters
@@ -290,6 +286,8 @@
 Thanks for using TWCManager, we hope you are finding this project useful.
 
 <p>This web interface is scheduled for eventual deprecation. We retain it for the components that have not yet been migrated to the new web interface, and for backwards compatibility with other TWCManager forks.
+
+<p>The defaults for the Web IPC Control Module have changed, disabling the module by default in v1.2.1. If you need to use the legacy web interface, please read the documentation <a href="https://github.com/ngardiner/TWCManager/blob/v1.2.1/docs/modules/Control_WebIPC.md">here</a> for details on what you need to configure.
 
 <p>We strongly recommend using the <a href="https://github.com/ngardiner/TWCManager/blob/v1.2.1/docs/modules/Control_HTTP.md">New Web Interface</a>. Feature partiy in the new web interface is a high priority goal of v1.2.1.
 

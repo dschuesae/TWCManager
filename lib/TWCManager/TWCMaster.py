@@ -62,6 +62,7 @@ class TWCMaster:
     subtractChargerLoad = False
     teslaLoginAskLater = False
     TWCID = None
+    version = "1.2.1"
 
     # TWCs send a seemingly-random byte after their 2-byte TWC id in a number of
     # messages. I call this byte their "Sign" for lack of a better term. The byte
@@ -258,6 +259,9 @@ class TWCMaster:
                 matched.append({"name": module, "ref": modinfo["ref"]})
         return matched
 
+    def getInterfaceModule(self):
+        return self.getModulesByType("Interface")[0]["ref"]
+
     def getScheduledAmpsDaysBitmap(self):
         return self.settings.get("scheduledAmpsDaysBitmap", 0x7F)
 
@@ -337,7 +341,7 @@ class TWCMaster:
         now = time.time()
         if now >= self.lastkWhPoll + 60:
             for slaveTWC in self.getSlaveTWCs():
-                self.getModuleByName("RS485").send(
+                self.getInterfaceModule().send(
                     bytearray(b"\xFB\xEB")
                     + self.TWCID
                     + slaveTWC.TWCID
@@ -376,22 +380,23 @@ class TWCMaster:
         else:
             data["isGreenPolicy"] = "No"
 
-        scheduledChargingStartHour = self.getScheduledAmpsStartHour()
-        scheduledChargingEndHour = self.getScheduledAmpsEndHour()
+        data["scheduledChargingStartHour"] = self.getScheduledAmpsStartHour()
+        data["scheduledChargingFlexStart"] = self.getScheduledAmpsTimeFlex()[0]
+        data["scheduledChargingEndHour"] = self.getScheduledAmpsEndHour()
         scheduledChargingDays = self.getScheduledAmpsDaysBitmap()
         scheduledFlexTime = self.getScheduledAmpsTimeFlex()
 
         data["ScheduledCharging"] = {
-            "enabled": scheduledChargingStartHour >= 0
-            and scheduledChargingEndHour >= 0
+            "enabled": data["scheduledChargingStartHour"] >= 0
+            and data["scheduledChargingEndHour"] >= 0
             and scheduledChargingDays > 0
             and self.getScheduledAmpsMax() > 0,
             "amps": self.getScheduledAmpsMax(),
-            "startingMinute": int(scheduledChargingStartHour * 60)
-            if scheduledChargingStartHour >= 0
+            "startingMinute": int(data["scheduledChargingStartHour"] * 60)
+            if data["scheduledChargingStartHour"] >= 0
             else -1,
-            "endingMinute": int(scheduledChargingEndHour * 60)
-            if scheduledChargingEndHour >= 0
+            "endingMinute": int(data["scheduledChargingEndHour"] * 60)
+            if data["scheduledChargingEndHour"] >= 0
             else -1,
             "monday": (scheduledChargingDays & 1) == 1,
             "tuesday": (scheduledChargingDays & 2) == 2,
@@ -422,7 +427,7 @@ class TWCMaster:
         return self.spikeAmpsToCancel6ALimit
 
     def getTimeLastTx(self):
-        return self.getModuleByName("RS485").timeLastTx
+        return self.getInterfaceModule().timeLastTx
 
     def getVehicleVIN(self, slaveID, part):
         prefixByte = None
@@ -434,7 +439,7 @@ class TWCMaster:
             prefixByte = bytearray(b"\xFB\xF1")
 
         if prefixByte:
-            self.getModuleByName("RS485").send(
+            self.getInterfaceModule().send(
                 prefixByte
                 + self.TWCID
                 + slaveID
@@ -950,7 +955,6 @@ class TWCMaster:
         self.settings["chargeLimits"][str(ID)] = (outsideLimit, lastApplied)
         self.queue_background_task({"cmd": "saveSettings"})
 
-
     def saveSettings(self):
         # Saves the volatile application settings (such as charger timings,
         # API credentials, etc) to a JSON file
@@ -1024,7 +1028,7 @@ class TWCMaster:
         # send slave linkready every 10 seconds whether or not they got master
         # linkready1/2 and if a master sees slave linkready, it will start sending
         # the slave master heartbeat once per second and the two are then connected.
-        self.getModuleByName("RS485").send(
+        self.getInterfaceModule().send(
             bytearray(b"\xFC\xE1")
             + self.TWCID
             + self.masterSign
@@ -1051,7 +1055,7 @@ class TWCMaster:
         # Once a master starts sending heartbeat messages to a slave, it
         # no longer sends the global linkready2 message (or if it does,
         # they're quite rare so I haven't seen them).
-        self.getModuleByName("RS485").send(
+        self.getInterfaceModule().send(
             bytearray(b"\xFB\xE2")
             + self.TWCID
             + self.masterSign
@@ -1076,12 +1080,12 @@ class TWCMaster:
         if self.protocolVersion == 2:
             msg += bytearray(b"\x00\x00")
 
-        self.getModuleByName("RS485").send(msg)
+        self.getInterfaceModule().send(msg)
 
     def sendStartCommand(self):
         # This function will loop through each of the Slave TWCs, and send them the start command.
         for slaveTWC in self.getSlaveTWCs():
-            self.getModuleByName("RS485").send(
+            self.getInterfaceModule().send(
                 bytearray(b"\xFC\xB1")
                 + self.TWCID
                 + slaveTWC.TWCID
@@ -1091,7 +1095,7 @@ class TWCMaster:
     def sendStopCommand(self):
         # This function will loop through each of the Slave TWCs, and send them the stop command.
         for slaveTWC in self.getSlaveTWCs():
-            self.getModuleByName("RS485").send(
+            self.getInterfaceModule().send(
                 bytearray(b"\xFC\xB2")
                 + self.TWCID
                 + slaveTWC.TWCID
@@ -1230,7 +1234,8 @@ class TWCMaster:
             self.settings["history"].append(
                 (
                     periodTimestamp.isoformat(timespec="seconds"),
-                    self.convertAmpsToWatts(avgCurrent) * self.getRealPowerFactor(avgCurrent),
+                    self.convertAmpsToWatts(avgCurrent)
+                    * self.getRealPowerFactor(avgCurrent),
                 )
             )
 
